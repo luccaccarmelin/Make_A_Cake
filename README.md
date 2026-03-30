@@ -36,3 +36,11 @@ Deve aparecer algo como Python 3.12.x.
 Bom jogo!
 
 -Ferramentas usadas para fazer o jogo: Notepad e CMD/Terminal
+
+===SPOILERS===
+
+FINAIS: 3
+
+-Final Pia
+-Final Fogo
+-Final Verdadeiro
