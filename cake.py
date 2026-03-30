@@ -1,23 +1,40 @@
 import winsound
 import time
 import os
-import msvcrt  # Para capturar qualquer tecla
 
-# ==========================
-# FUNÇÃO CLEAR
-# ==========================
+# ======================================================
+# FUNCOES UTILITARIAS
+# ======================================================
+
 def limpar():
     os.system("cls" if os.name == "nt" else "clear")
 
-# ==========================
-# FUNÇÃO ESPERA QUALQUER TECLA
-# ==========================
-def qualquer_tecla():
-    msvcrt.getch()
 
-# ==========================
-# CONFIGURAÇÃO DO JOGO
-# ==========================
+def pausa(segundos=1):
+    time.sleep(segundos)
+
+
+# ======================================================
+# SISTEMA DE SOM
+# ======================================================
+
+def som(tipo):
+    sons = {
+        "pegar": "SystemAsterisk",
+        "misturar": "SystemExclamation",
+        "assar": "SystemHand",
+        "erro": "SystemHand"
+    }
+    winsound.PlaySound(
+        sons.get(tipo, "SystemAsterisk"),
+        winsound.SND_ALIAS | winsound.SND_ASYNC
+    )
+
+
+# ======================================================
+# CONFIGURACAO DO JOGO
+# ======================================================
+
 LUGARES = {
     "geladeira": {"ovos": 6, "leite": 2},
     "armario": {"farinha": 3, "acucar": 3, "cacau": 2},
@@ -26,168 +43,198 @@ LUGARES = {
     "pia": {}
 }
 
-RECEITAS = {
-    "bolo": {
-        "ingredientes": {
-            "ovos": 2,
-            "leite": 1,
-            "farinha": 2,
-            "acucar": 1,
-            "cacau": 1
-        },
-        "etapas": ["misturar", "assar"]
-    }
+RECEITA_BOLO = {
+    "ovos": 2,
+    "leite": 1,
+    "farinha": 2,
+    "acucar": 1,
+    "cacau": 1
 }
 
-inventario = {}
-for lugar in LUGARES.values():
-    for item in lugar:
-        inventario[item] = 0
+inventario = {item: 0 for lugar in LUGARES.values() for item in lugar}
 
-# ==========================
-# FUNÇÕES DE SOM
-# ==========================
-def som_pegar_item():
-    winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS | winsound.SND_ASYNC)
-
-def som_misturar():
-    winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS | winsound.SND_ASYNC)
-
-def som_assar():
-    winsound.PlaySound("SystemHand", winsound.SND_ALIAS | winsound.SND_ASYNC)
-
-def som_erro():
-    winsound.PlaySound("SystemHand", winsound.SND_ALIAS | winsound.SND_ASYNC)
-
-# ==========================
-# ESTADO DO BOLO
-# ==========================
+bolo_misturado = False
 bolo_pronto = False
-bolo_etapa = None
-pote = {}
 
-# ==========================
-# INÍCIO DO JOGO
-# ==========================
+
+# ======================================================
+# INICIO DO JOGO
+# ======================================================
+
 limpar()
-print("Make a Cake! (Versao-0.1)")
-time.sleep(1)
-limpar()
+print("Make a Cake - Versao 0.4")
+pausa(1.5)
 
 while True:
     limpar()
-    print("\nCOZINHA :: ", end="")
+    print("COZINHA\n")
+
     for i, lugar in enumerate(LUGARES.keys(), 1):
-        print(f"{i} - {lugar}", end=" | ")
+        print(f"{i} - {lugar}")
     print("0 - Sair")
 
-    escolha = input("\nIr para... ").lower()
+    escolha = input("\nIr para... ").lower().strip()
 
     if escolha == "0":
         break
 
-    if escolha.isdigit() and 1 <= int(escolha) <= len(LUGARES):
-        lugar_atual = list(LUGARES.keys())[int(escolha)-1]
-    else:
+    if not escolha.isdigit() or not (1 <= int(escolha) <= len(LUGARES)):
+        print("Lugar invalido.")
+        pausa(1)
         continue
 
-    while True:
-        limpar()
-        print(f"Você está em {lugar_atual.upper()} ::")
-        
-        # ==========================
-        # Geladeira / Armário
-        # ==========================
-        if lugar_atual in ["geladeira", "armario"]:
-            itens = list(LUGARES[lugar_atual].keys())
-            if not itens:
-                print("Não há itens disponíveis aqui.")
-            else:
-                for i, item in enumerate(itens, 1):
-                    print(f"{i} - {item} ({LUGARES[lugar_atual][item]})")
-            print("0 - Voltar")
-            opc = input("Pegar... ").lower()
-            if opc == "0":
-                break
-            elif opc.isdigit() and 1 <= int(opc) <= len(itens):
-                item = itens[int(opc)-1]
-                inventario[item] += 1
-                LUGARES[lugar_atual][item] -= 1
-                som_pegar_item()
-                print(f"Você pegou {item}! Total no inventário: {inventario[item]}")
-                qualquer_tecla()
-                if LUGARES[lugar_atual][item] <= 0:
-                    del LUGARES[lugar_atual][item]
-            else:
-                som_erro()
-                print("Ação inválida!")
-                qualquer_tecla()
+    lugar_atual = list(LUGARES.keys())[int(escolha) - 1]
 
-        # ==========================
-        # Bancada (misturar)
-        # ==========================
-        elif lugar_atual == "bancada":
-            if all(inventario.get(i,0) >= q for i,q in RECEITAS["bolo"]["ingredientes"].items()) and bolo_etapa != "assar":
-                print("Você pode misturar os ingredientes para o bolo!")
-                print("1 - Misturar tudo no pote")
-            elif bolo_etapa == "assar":
-                print("Os ingredientes já estão misturados! Leve ao forno para assar.")
+    # ======================================================
+    # GELADEIRA / ARMARIO
+    # ======================================================
+
+    if lugar_atual in ["geladeira", "armario"]:
+        while True:
+            limpar()
+            print(f"Voce esta em {lugar_atual.upper()}\n")
+
+            itens = LUGARES[lugar_atual]
+            lista_itens = list(itens.keys())
+
+            if not lista_itens:
+                print("Nao ha itens disponiveis aqui.\n")
             else:
-                print("Faltam ingredientes para misturar.")
+                for i, item in enumerate(lista_itens, 1):
+                    print(f"{i} - {item} ({itens[item]})")
+
             print("0 - Voltar")
-            opc = input("Escolha... ").lower()
+
+            opc = input("\nPegar... ").lower().strip()
+
             if opc == "0":
                 break
-            elif opc == "1" and all(inventario.get(i,0) >= q for i,q in RECEITAS["bolo"]["ingredientes"].items()):
-                for item,q in RECEITAS["bolo"]["ingredientes"].items():
+
+            pegar_tudo = False
+
+            # Detecta *
+            if opc.endswith("*"):
+                pegar_tudo = True
+                opc = opc[:-1]
+
+            item_escolhido = None
+
+            # Escolha por numero
+            if opc.isdigit() and 1 <= int(opc) <= len(lista_itens):
+                item_escolhido = lista_itens[int(opc) - 1]
+
+            # Escolha por nome
+            elif opc in lista_itens:
+                item_escolhido = opc
+
+            if item_escolhido:
+                quantidade_disponivel = itens[item_escolhido]
+
+                if pegar_tudo:
+                    quantidade_pega = quantidade_disponivel
+                else:
+                    quantidade_pega = 1
+
+                inventario[item_escolhido] += quantidade_pega
+                itens[item_escolhido] -= quantidade_pega
+
+                if itens[item_escolhido] <= 0:
+                    del itens[item_escolhido]
+
+                som("pegar")
+
+                nome_base = (
+                    item_escolhido[:-1]
+                    if item_escolhido.endswith("s")
+                    else item_escolhido
+                )
+
+                print(f"\nVoce pegou {quantidade_pega} {nome_base.upper()}")
+                pausa(1)
+
+            else:
+                som("erro")
+                print("Acao invalida.")
+                pausa(1)
+
+    # ======================================================
+    # BANCADA
+    # ======================================================
+
+    elif lugar_atual == "bancada":
+        limpar()
+        print("Voce esta na BANCADA\n")
+
+        if bolo_pronto:
+            print("O bolo ja esta pronto.")
+            print("\n0 - Voltar")
+            input()
+            continue
+
+        if not bolo_misturado:
+            pode_misturar = all(
+                inventario[i] >= q for i, q in RECEITA_BOLO.items()
+            )
+
+            if pode_misturar:
+                print("Misturando ingredientes...")
+                pausa(1.5)
+
+                for item, q in RECEITA_BOLO.items():
                     inventario[item] -= q
-                    pote[item] = q
-                bolo_etapa = "assar"
-                som_misturar()
-                print("Você misturou todos os ingredientes no pote!")
-                qualquer_tecla()
-            else:
-                som_erro()
-                print("Não foi possível misturar!")
-                qualquer_tecla()
 
-        # ==========================
-        # Forno (assar)
-        # ==========================
-        elif lugar_atual == "forno":
-            if bolo_etapa == "assar":
-                print("Você pode assar o bolo!")
-                print("1 - Assar bolo")
+                bolo_misturado = True
+                som("misturar")
+                print("Massa pronta. Leve ao forno.")
             else:
-                print("Nada para assar ainda.")
-            print("0 - Voltar")
-            opc = input("Escolha... ").lower()
-            if opc == "0":
-                break
-            elif opc == "1" and bolo_etapa == "assar":
-                bolo_etapa = None
-                bolo_pronto = True
-                pote = {}
-                som_assar()
-                print("Voce fez um bolo! Obrigado por jogar Make_a_Cake 0.1")
-                qualquer_tecla()
-            else:
-                som_erro()
-                print("Não é possível assar ainda!")
-                qualquer_tecla()
+                print("Faltam ingredientes.")
 
-        # ==========================
-        # Pia (decorativa)
-        # ==========================
-        elif lugar_atual == "pia":
-            print("A pia está limpa, mas não serve para misturar o bolo ainda")
-            print("0 - Voltar")
-            opc = input("Escolha... ").lower()
-            if opc == "0":
-                break
+        else:
+            print("A massa ja esta pronta.")
 
-        time.sleep(0.2)
+        print("\n0 - Voltar")
+        input()
+
+    # ======================================================
+    # FORNO
+    # ======================================================
+
+    elif lugar_atual == "forno":
         limpar()
+        print("Voce esta no FORNO\n")
+
+        if bolo_misturado and not bolo_pronto:
+            print("Assando bolo...")
+            pausa(2)
+            som("assar")
+
+            bolo_pronto = True
+            bolo_misturado = False
+
+            print("\nVoce fez um bolo.")
+        elif bolo_pronto:
+            print("O bolo ja foi feito.")
+        else:
+            print("Nao ha nada para assar.")
+
+        print("\n0 - Voltar")
+        input()
+
+    # ======================================================
+    # PIA
+    # ======================================================
+
+    elif lugar_atual == "pia":
+        limpar()
+        print("A pia esta limpa.")
+        print("Nao serve para preparar o bolo.\n")
+        print("0 - Voltar")
+        input()
+
+
+# ======================================================
+# FINAL
+# ======================================================
 
 limpar()
 print("Saindo da cozinha...")
