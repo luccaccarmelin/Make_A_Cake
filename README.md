@@ -2,6 +2,14 @@
 
 Projeto solo Brasileiro feito 100% em Python.
 
+UPDATE 0.3:
+CHANGELOG
+
+-Interface muito melhor com arte ASCII
+-Mais finais
+-Easter Eggs
+-Novas mecanicas na gameplay
+
   Como jogar
 Baixe o arquivo cake.py.
 Abra o Prompt de Comando (CMD)/Terminal.
