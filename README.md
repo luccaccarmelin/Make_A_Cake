@@ -1,6 +1,6 @@
 --Make a Cake--
 
-Projeto solo Brasileiro feito 100% em Python.
+Projeto solo Brasileiro feito 100% em Python!
 
 UPDATE 0.3 EM BREVE!
 
