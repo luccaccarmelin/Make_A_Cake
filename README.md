@@ -4,7 +4,7 @@ Projeto solo Brasileiro feito 100% em Python!
 
 UPDATE 0.3 EM BREVE!
 
-  Como jogar
+--Como jogar
 Baixe o arquivo cake.py.
 Abra o Prompt de Comando (CMD)/Terminal.
 
